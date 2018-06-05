@@ -71,6 +71,11 @@ class FCViewController: UIViewController, UINavigationControllerDelegate {
     
     func configureDatabase() {
         ref =   Database.database().reference()
+        _refHandle = ref.child("messages").observe(.childAdded, with: { (snapShot : DataSnapshot) in
+            self.messages.append(snapShot)
+            self.messagesTable.insertRows(at: [IndexPath(row: self.messages.count - 1, section: 0)], with: .automatic)
+        })
+        self.scrollToBottomMessage()
         
     }
     
@@ -79,7 +84,7 @@ class FCViewController: UIViewController, UINavigationControllerDelegate {
     }
     
     deinit {
-        // TODO: set up what needs to be deinitialized when view is no longer being used
+        ref.child("messages").removeObserver(withHandle: _refHandle)
     }
     
     // MARK: Remote Config
@@ -205,8 +210,13 @@ extension FCViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         // dequeue cell
         let cell: UITableViewCell! = messagesTable.dequeueReusableCell(withIdentifier: "messageCell", for: indexPath)
+        let messageSnapShot : DataSnapshot! = messages[indexPath.row]
+        let message = messageSnapShot.value as![String : String]
+        let name = message["name"] ?? "[username]"
+        let text = message["text"] ?? "[message]"
+        cell.textLabel?.text = name + ": " + text
+        cell.imageView?.image = self.placeholderImage
         return cell!
-        // TODO: update cell to display message data
     }
     
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
