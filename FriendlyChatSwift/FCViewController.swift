@@ -98,8 +98,8 @@ class FCViewController: UIViewController, UINavigationControllerDelegate {
     }
     
     func configureStorage() {
-        // TODO: configure storage using your firebase storage
-    }
+    storageRef = Storage.storage().reference()
+}
     
     deinit {
         ref.child("messages").removeObserver(withHandle: _refHandle)
@@ -153,7 +153,18 @@ class FCViewController: UIViewController, UINavigationControllerDelegate {
     }
     
     func sendPhotoMessage(photoData: Data) {
-        // TODO: create method that pushes message w/ photo to the firebase database
+        let imagePath = "chat_photos/" + (Auth.auth().currentUser?.uid)! + "/\(Double(Date.timeIntervalSinceReferenceDate*1000)).jpg"
+        let metadata = StorageMetadata()
+        metadata.contentType = "image/jpeg"
+        //create child node at imagepath with photodata and metadata
+        storageRef!.child(imagePath).putData(photoData, metadata: metadata) { (metadata, error) in
+            if let error = error {
+                print("Error uploading: \(error)")
+                return
+            }
+            // use sendMessage to add imageURL to database
+            self.sendMessage(data: [Constants.MessageFields.imageUrl: self.storageRef!.child((metadata?.path)!).description])
+        }
     }
     
     // MARK: Alert
